@@ -26,7 +26,6 @@ pydic takes in account the rigid body transformation.
 
 Note that this file is a module file, you cannot execute it.
 You can go to the example directory for usage examples.
-
 """
 
 
