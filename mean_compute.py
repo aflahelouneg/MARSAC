@@ -36,7 +36,7 @@ pydic = imp.load_source('pydic', './pydic.py') # URL to import pydic.py
 
 MULTI_PRESSURE = False
 
-frame = 41  # number of frale corresponding to the quasi-static state
+frame = 41  # number of the frame corresponding to the quasi-static state
 pressure_setpoint = 100 # mbar
 scale_disp = 5 # Displacement field vectors scale on images
 array_color = (0,0,255)
