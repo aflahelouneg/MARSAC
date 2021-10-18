@@ -1,35 +1,33 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+"""
+This file is part of pydic, a free digital correlation suite for computing strain fields
 
-# This file is part of pydic, a free digital correlation suite for computing strain fields
-#
-# Author :  - Damien ANDRE, SPCTS/ENSIL-ENSCI, Limoges France
-#             <damien.andre@unilim.fr>
-#
-# Copyright (C) 2017 Damien ANDRE
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Author :  - Damien ANDRE, SPCTS/ENSIL-ENSCI, Limoges France
+         <damien.andre@unilim.fr>
 
+Copyright (C) 2017 Damien ANDRE
 
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-# ====== INTRODUCTION
-# Welcome to pydic a free python suite for digital image correlation.
-# pydic allows to compute (smoothed or not) strain fields from a serie of pictures.
-# pydic takes in account the rigid body transformation.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-# Note that this file is a module file, you can't execute it.
-# You can go to the example directory for usage examples.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+INTRODUCTION
+Welcome to pydic a free python suite for digital image correlation.
+pydic allows to compute (smoothed or not) strain fields from a serie of pictures.
+pydic takes in account the rigid body transformation.
+
+Note that this file is a module file, you cannot execute it.
+You can go to the example directory for usage examples.
+
+"""
 
 
 import numpy as np
