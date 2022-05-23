@@ -5,7 +5,7 @@ The inputs are:
 - Experimental data
 
 The outputs are:
-- Idenfied parameters
+- Identified parameters
 
 This inverse solver has been implemented especially for one specific model:
 2D otrhotropic linear elasticity of circular domain, with the following boundary
@@ -78,8 +78,6 @@ def cost_gradient(param, node_coord, angle):
     dJdt0 = dJ_dt0*J_
     dJdx0 = dJ_dx0*J_
     dJdy0 = dJ_dy0*J_
-
-    # input('pause')
 
     gradient_array[0] = dJda
     gradient_array[1] = dJdb
