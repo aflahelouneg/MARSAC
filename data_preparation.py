@@ -34,10 +34,10 @@ def export_data(FRAME_NUM, SOURCE_FOLDER):
     data_mean_reduc = np.array(data_mean_reduc)
 
     export_data = {
-        'node_x' : data_mean_reduc[1:, 3], # correspending to index 5
-        'node_y' : data_mean_reduc[1:, 4], # correspending to index 6
-        'disp_x_mean' : data_mean_reduc[1:, 5], # correspending to index 9
-        'disp_y_mean' : data_mean_reduc[1:, 6],  # correspending to index 10
+        'node_x' : data_mean_reduc[:, 3], # correspending to index 5
+        'node_y' : data_mean_reduc[:, 4], # correspending to index 6
+        'disp_x_mean' : data_mean_reduc[:, 5], # correspending to index 9
+        'disp_y_mean' : data_mean_reduc[:, 6],  # correspending to index 10
     }
 
     return export_data
