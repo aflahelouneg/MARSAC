@@ -471,7 +471,7 @@ for x, y in zip(ellip_x_data, ellip_y_data):
     exp_nodes.append([x, y])
 exp_nodes = np.array(exp_nodes, np.float64)
 
-params, err_rel, deter_coeff, num_iter = newton_gauss.inverse_solve(
+params, err_rel, deter_coeff, num_iter = newton.inverse_solve(
         initial_set, exp_nodes, angles, R, num_points)
 
 print(f'Converged parameters are:')
