@@ -23,7 +23,7 @@ import errno
 import glob
 import matplotlib.ticker as ticker
 import math
-import newton_gauss
+import newton
 from lmfit import Parameters, minimize, report_fit
 from scipy.interpolate import griddata
 from scipy.ndimage.filters import gaussian_filter
@@ -51,7 +51,7 @@ SFF = 'svg' # saved file format : svg, eps, png, ...
 FRAME_NUM = '0041' # frame number correspending to quasi-static state
 pressure = 300 #mbar : suction pressure fixed for the test
 pressure *= 1e-3*0.1 # Convert mbar to MPa
-
+pressure *= 0.41 # deduce radial stress from applied pressure
 
 # ================================================
 ### Functions
@@ -472,7 +472,7 @@ for x, y in zip(ellip_x_data, ellip_y_data):
 exp_nodes = np.array(exp_nodes, np.float64)
 
 params, err_rel, deter_coeff, num_iter = newton_gauss.inverse_solve(
-        initial_set, exp_nodes, angles, R)
+        initial_set, exp_nodes, angles, R, num_points)
 
 print(f'Converged parameters are:')
 print(f'a = {params[0]} mm')
