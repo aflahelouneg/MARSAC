@@ -302,7 +302,7 @@ def residual(param, node_coord, angle, R):
     return np.abs(J_), np.abs(np.sqrt(xi**2 + yi**2) - R), Y_exp, SSE_
 
 
-def inverse_solve(initial, nodes, angles, R):
+def inverse_solve(initial, nodes, angles, R, NE):
 
     rel_tol = 1e-9
     iter_max = 50
@@ -333,8 +333,8 @@ def inverse_solve(initial, nodes, angles, R):
         Y_exp = [] # Sum of Squares Total
 
         for node, angle in zip(nodes, angles):
-            cumul_gradient += cost_gradient(m, node, angle)
-            cumul_hessian  += cost_hessian(m, node, angle)
+            cumul_gradient += cost_gradient(m, node, angle)/NE
+            cumul_hessian  += cost_hessian(m, node, angle)/NE
             comul_cost_, cumul_disp_, Y_exp_, SSE_ = residual(m, node, angle, R)
             cumul_cost += comul_cost_
             cumul_disp += cumul_disp_
