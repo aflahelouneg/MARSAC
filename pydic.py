@@ -3,8 +3,12 @@ Created on Fri Apr 19 09:08:55 2019
 
 @author: Quentin LUCOT
 
-Updated on Jan 18 2021
-by Audrey Bertin and Aflah Elouneg
+Modified on Jan 18 2021 by Aflah Elouneg:
+- Resetting the video ZOI
+- Adding path list for .CSV tables
+- Change the outputs tree structure
+- Displaying displacement fields on video frames
+
 """
 
 #########################################
