@@ -5,7 +5,7 @@ The inputs are:
 - Experimental data
 
 The outputs are:
-- Identified parameters
+- Idenfied parameters
 
 This inverse solver has been implemented especially for one specific model:
 2D otrhotropic linear elasticity of circular domain, with the following boundary
@@ -15,12 +15,13 @@ conditions:
 
 =============================
 Author: @aflah elouneg
-Version 1.0:    17/05/2022
+Version 2.0:    08/07/2021
 =============================
 '''
 
 import numpy as np
 import scipy.linalg as linalg
+
 
 def cost_gradient(param, node_coord, angle):
     ''' compute the gradient array of the objective function J regarding the
@@ -78,6 +79,8 @@ def cost_gradient(param, node_coord, angle):
     dJdt0 = dJ_dt0*J_
     dJdx0 = dJ_dx0*J_
     dJdy0 = dJ_dy0*J_
+
+    # input('pause')
 
     gradient_array[0] = dJda
     gradient_array[1] = dJdb
@@ -185,10 +188,8 @@ def cost_hessian(param, node_coord, angle):
     d2J_dt02 = (2*d2xdt02*xr + 2*dxdt0**2 + 2*d2ydt02*yr + 2*dydt0**2)*\
         (0.5)*(xr**2 + yr**2)**(-0.5) +\
         (2*dxdt0*xr + 2*dydt0*yr)**2*(0.5)*(-0.5)*(xr**2 + yr**2)**(-1.5)
-    d2J_dx02 = 2*0.5*(xr**2 + yr**2)**(-0.5) +\
-        4*xr**2*(0.5)*(-0.5)*(xr**2 + yr**2)**(-1.5)
-    d2J_dy02 = 2*0.5*(xr**2 + yr**2)**(-0.5) +\
-        4*yr**2*(0.5)*(-0.5)*(xr**2 + yr**2)**(-1.5)
+    d2J_dx02 = 2*0.5*(xr**2 + yr**2)**(-0.5) + 4*xr**2*(0.5)*(-0.5)*(xr**2 + yr**2)**(-1.5)
+    d2J_dy02 = 2*0.5*(xr**2 + yr**2)**(-0.5) + 4*yr**2*(0.5)*(-0.5)*(xr**2 + yr**2)**(-1.5)
 
     d2J_dadb = (2*d2xdadb*xr + 2*d2ydadb*yr + 2*dxda*dxdb + 2*dyda*dydb)*\
         (0.5)*(xr**2 + yr**2)**(-0.5) + (2*dxda*xr + 2*dyda*yr)*\
@@ -302,7 +303,7 @@ def residual(param, node_coord, angle, R):
     return np.abs(J_), np.abs(np.sqrt(xi**2 + yi**2) - R), Y_exp, SSE_
 
 
-def inverse_solve(initial, nodes, angles, R, NE):
+def inverse_solve(initial, nodes, angles, R):
 
     rel_tol = 1e-9
     iter_max = 50
@@ -333,8 +334,8 @@ def inverse_solve(initial, nodes, angles, R, NE):
         Y_exp = [] # Sum of Squares Total
 
         for node, angle in zip(nodes, angles):
-            cumul_gradient += cost_gradient(m, node, angle)/NE
-            cumul_hessian  += cost_hessian(m, node, angle)/NE
+            cumul_gradient += cost_gradient(m, node, angle)
+            cumul_hessian  += cost_hessian(m, node, angle)
             comul_cost_, cumul_disp_, Y_exp_, SSE_ = residual(m, node, angle, R)
             cumul_cost += comul_cost_
             cumul_disp += cumul_disp_

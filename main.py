@@ -4,8 +4,8 @@ multiaxial ring suction test data. The main operations are:
 - Data preparation: import cartestian grids of experimental data
     in quasi-static state
 - Identification of parameters using a LSQ (leasts squares) method:
-    Newton-Gauss.
-- Plot model fit curves (model V.S. data)
+    Newton.
+- Plot model fit curves (model vs. data)
 
 =============================
 Author: Aflah Elouneg :
@@ -13,28 +13,33 @@ Author: Aflah Elouneg :
             --  aflah.elouneg@femto-st.fr
 Version 1.0:    17/05/2022
 =============================
+Version 1.1:    15/03/2024
+- Add color maps of radial displacement field
+- Adapt input/output foldes
+- Remove unnecessary libraries
+- Add enable/disable features
+- Correct the displacement arrays in the function "ellipse_deformed"
+- Add waiting message for long process
 '''
 
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import configparser
 import errno
-import glob
-import matplotlib.ticker as ticker
-import math
 import newton
-from lmfit import Parameters, minimize, report_fit
+import itertools
+import threading
+import sys
+import time
+import matplotlib
 from scipy.interpolate import griddata
-from scipy.ndimage.filters import gaussian_filter
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
-from matplotlib.ticker import FormatStrFormatter, ScalarFormatter, FixedFormatter
 from matplotlib.pyplot import ticklabel_format
 from matplotlib.ticker import MaxNLocator
 
 np.set_printoptions(precision=6)
-
+matplotlib.use('agg')
 
 # ============================================
 ### Parameters
@@ -45,13 +50,13 @@ DISP_FIELD_IMAGES = True
 PLOT_DISP_FIELD = True
 PLOT_DEFORMATION = True
 PLOT_MODEL_FIT = True
-FIGURES_FOLDER = 'figures'
-SOURCE_FOLDER = 'source'
+IDENTIFY_PARAMETERS = True
+SAVE_IDENTIFIED_PARAMETERS = True
+FIGURES_FOLDER = 'output'
+SOURCE_FOLDER = 'input'
 SFF = 'svg' # saved file format : svg, eps, png, ...
 FRAME_NUM = '0041' # frame number correspending to quasi-static state
 pressure = 300 #mbar : suction pressure fixed for the test
-pressure *= 1e-3*0.1 # Convert mbar to MPa
-pressure *= 0.41 # deduce radial stress from applied pressure
 
 # ================================================
 ### Functions
@@ -83,6 +88,23 @@ def interpolate_r_th(px, py, nodes_x, nodes_y, data_x, data_y):
     return disp_interp[:, 0], disp_interp[:, 1]
 
 
+def interpolate_heatmap(px, py, nodes_x, nodes_y, data_x, data_y):
+
+    disp_interp = []
+    XG = nodes_x
+    YG = nodes_y
+    disp = []
+
+    for ux, uy in zip(data_x, data_y):
+        disp.append([ux, uy])
+    for X, Y in zip(px, py):
+        disp_interp.append(griddata(list(zip(XG, YG)),
+                                    disp, (X, Y), method='linear'))
+
+    disp_interp = np.array(disp_interp)
+    return disp_interp[:, :, 0], disp_interp[:, :, 1]
+
+
 def ellipse_deformed(X, Y, U, V):
     '''return final configuration of X, Y nodes after displacement U, V '''
 
@@ -90,8 +112,14 @@ def ellipse_deformed(X, Y, U, V):
     ellip_y = []
 
     for x, y, u, v in zip(X, Y, U, V):
-        ellip_x.append(x + u*1e-3)
-        ellip_y.append(y + v*1e-3)
+        phi = np.arctan2(y, x)
+        n = np.sqrt(x**2 + y**2)
+        ur = u*n*np.cos(phi)/n + v*n*np.sin(phi)/n
+        urx = ur*np.cos(phi)
+        ury = ur*np.sin(phi)
+
+        ellip_x.append(x + urx*1e-3)
+        ellip_y.append(y + ury*1e-3)
 
     return np.array(ellip_x), np.array(ellip_y)
 
@@ -174,7 +202,7 @@ def plot_axis_rotation(params, exp_nodes, r, angles):
     ax.legend(framealpha=0.2, bbox_to_anchor=[0.5, 0.25], loc='center')
     plt.gca().set_aspect("equal")
 
-    plt.savefig(f'figures/axis_rotation.{SFF}', bbox_inches='tight')
+    plt.savefig(f'{FIGURES_FOLDER}/axis_rotation.{SFF}', bbox_inches='tight')
 
 
 def plot_model_fit_ellipse(params, exp_nodes, r, angles):
@@ -246,7 +274,7 @@ def plot_model_fit_ellipse(params, exp_nodes, r, angles):
     axins.yaxis.offsetText.set_fontsize(10)
     mark_inset(ax, axins, loc1=3, loc2=1, fc="none", ec="0.5")
 
-    plt.savefig(f'figures/model_fit_ellipse.{SFF}', bbox_inches='tight')
+    plt.savefig(f'{FIGURES_FOLDER}/model_fit_ellipse.{SFF}', bbox_inches='tight')
 
 
 def plot_model_fit_curve(params, exp_nodes, r, angles):
@@ -290,7 +318,7 @@ def plot_model_fit_curve(params, exp_nodes, r, angles):
     ax.set_aspect(1./ax.get_data_ratio())
     plt.grid(True)
 
-    plt.savefig(f'figures/mode_fit_curve.{SFF}', bbox_inches='tight')
+    plt.savefig(f'{FIGURES_FOLDER}/mode_fit_curve.{SFF}', bbox_inches='tight')
 
     #==============================
     # recentred
@@ -304,10 +332,10 @@ def plot_model_fit_curve(params, exp_nodes, r, angles):
         node_y = r*np.sin(th) + y0
 
         ux_disp_data, uy_disp_data = interpolate_r_th(node_x, node_y,
-                data[0], data[1], data[2], data[3])
+            data[0], data[1], data[2], data[3])
 
-        ellip_x_data, ellip_y_data = ellipse_deformed(node_x,
-                                node_y, ux_disp_data, uy_disp_data)
+        ellip_x_data, ellip_y_data = ellipse_deformed(node_x, node_y,
+            ux_disp_data, uy_disp_data)
 
         x_ = a*np.cos(th - th0)
         y_ = b*np.sin(th - th0)
@@ -347,8 +375,54 @@ def plot_model_fit_curve(params, exp_nodes, r, angles):
     ax2.tick_params(axis='x', colors=p3.get_color())
     ax2.grid(True)
 
-    plt.savefig(f'figures/mode_fit_curve_recentred.{SFF}', bbox_inches='tight')
+    plt.savefig(f'{FIGURES_FOLDER}/mode_fit_curve_recentred.{SFF}', bbox_inches='tight')
 
+
+def plot_color_map_post_identif(params, disp_x_mean_raw, disp_y_mean_raw):
+
+    nx_point_raw = 49
+    ny_point_raw = 49
+
+    nx_points = 201
+    ny_points = 201
+    radius = 2.0
+
+    x0  = params[3]
+    y0  = params[4]
+
+    xp = np.linspace(-radius, radius, nx_points)
+    yp = np.linspace(-radius, radius, ny_points)
+
+    node_x, node_y = np.meshgrid(xp, yp)
+
+    disp_x_raw_recentred = disp_x_mean_raw + x0*1e3
+    disp_y_raw_recentred = disp_y_mean_raw + y0*1e3
+
+    ux_disp_data, uy_disp_data = interpolate_heatmap(node_x, node_y, node_x_raw,
+        node_y_raw, disp_x_raw_recentred, disp_y_raw_recentred)
+
+    ur_disp = ux_disp_data*np.cos(np.arctan2(node_y, node_x)) \
+            + uy_disp_data*np.sin(np.arctan2(node_y, node_x))
+
+    fig_name = f'Radial displacement heatmap'
+    fh = plt.figure(fig_name)
+    fh.clear()
+    ax = fh.add_subplot(111)
+
+    levels = MaxNLocator(nbins=25).tick_values(ur_disp.min(), ur_disp.max())
+
+    # cf = ax.contourf(node_x, node_y, ur_disp, levels=levels, cmap='jet')
+    cf = ax.pcolormesh(node_x, node_y, ur_disp, cmap='jet')
+    clb = plt.colorbar(cf, ax=ax)
+    # ax.plot(x0, y0, 'k+', markersize=2)
+    # ax.plot(0, 0, 'ko', markersize=2)
+
+    clb.ax.set_title(r'$u_r$ [$\mu$m]', fontsize=12)
+
+    ax.set_xlabel(r'$x_1^{\prime}$ [mm]', fontsize=12)
+    ax.set_ylabel(r'$x_2^{\prime}$ [mm]', fontsize=12)
+
+    plt.savefig(f'{FIGURES_FOLDER}/color_map.{SFF}', bbox_inches='tight')
 
 # ==============================================================
 # ==============================================================
@@ -369,7 +443,7 @@ theta_input = float(input('Insert the initial anisotropy angle (in degrees):\
 (for demo type 45): '))
 initial_set = {
     #WARNING: avoid a = b
-    'a': 1.00, #(MPa)
+    'a': 1.0, #(MPa)
     'b': 1.1, #(MPa)
     'theta0': theta_input, #[°]
     'x0': 0.0,
@@ -414,7 +488,6 @@ ux_disp_data, uy_disp_data = interpolate_r_th(node_x, node_y, node_x_raw,
 
 ellip_x_data, ellip_y_data = ellipse_deformed(node_x, node_y,
         ux_disp_data, uy_disp_data)
-
 
 # =================================================================
 if PLOT_DISP_FIELD:
@@ -464,28 +537,60 @@ if PLOT_DEFORMATION:
 # =================================================================
 ### Inverse identification
 
-print('Parameter identification...')
+if IDENTIFY_PARAMETERS:
+    print('Parameter identification...')
 
-exp_nodes = []
-for x, y in zip(ellip_x_data, ellip_y_data):
-    exp_nodes.append([x, y])
-exp_nodes = np.array(exp_nodes, np.float64)
+    exp_nodes = []
+    for x, y in zip(ellip_x_data, ellip_y_data):
+        exp_nodes.append([x, y])
+    exp_nodes = np.array(exp_nodes, np.float64)
 
-params, err_rel, deter_coeff, num_iter = newton.inverse_solve(
-        initial_set, exp_nodes, angles, R, num_points)
+    params, err_rel, deter_coeff, num_iter = newton.inverse_solve( initial_set,
+        exp_nodes, angles, R)
 
-print(f'Converged parameters are:')
-print(f'a = {params[0]} mm')
-print(f'b = {params[1]} mm')
-print(f'phi = {params[2]} deg')
-print(f'x1,0 = {params[3]} mm')
-print(f'x2,0 = {params[4]} mm')
-print(f'Correlation coefficient is: {np.sqrt(deter_coeff[0])}')
+    print(f'Converged parameters are:')
+    print(f'Minor semi-axis a (mm): {params[0][0]}')
+    print(f'Major semi-axis b (mm): {params[1][0]}')
+    print(f'Anisotropy angle phi (deg): {params[2][0]}')
+    print(f'Center shift X1-coord (mm): {params[3][0]}')
+    print(f'Center shift X2-coord (mm): {params[4][0]}')
+    print(f'Correlation coefficient is: {np.sqrt(deter_coeff)[0]}')
 
+    if params[0] > params[1]:
+        print("'a' parameter is not smaller than 'b'! The result is not valid. "+\
+            "Recalcultes with a different initial anisotropy angle value")
+
+    if params[0] < 0 or params[1] < 0:
+        print("'a' and/or 'b' are not positive ! The result is not valid. " +\
+            "Recalcultes with a different initial anisotropy angle value")
+
+if SAVE_IDENTIFIED_PARAMETERS:
+    RESULT_FILE = open(FIGURES_FOLDER + '/identification_results.txt', 'wt')
+    RESULT_FILE.write(f'Ring suction pressure: {pressure} mbar \n')
+    RESULT_FILE.write(f'Radius of the circle of interest: {R} mm \n')
+    RESULT_FILE.write(f'a = {params[0][0]} mm \n')
+    RESULT_FILE.write(f'b = {params[1][0]} mm \n')
+    RESULT_FILE.write(f'phi = {params[2][0]} deg \n')
+    RESULT_FILE.write(f'x1,0 = {params[3][0]} mm \n')
+    RESULT_FILE.write(f'x2,0 = {params[4][0]} mm \n')
+    RESULT_FILE.write(f'Correlation coefficient is: {np.sqrt(deter_coeff)[0]}')
+    RESULT_FILE.close()
 
 # ==============================================================
 if PLOT_MODEL_FIT:
-    plot_model_fit_curve(params, [ellip_x_data, ellip_y_data], R, angles)
-    plot_model_fit_ellipse(params, [ellip_x_data, ellip_y_data], R, angles)
-    plot_axis_rotation(params, [ellip_x_data, ellip_y_data], R, angles)
-    print('All plots saved !')
+
+    def long_process():
+        plot_model_fit_curve(params, [ellip_x_data, ellip_y_data], R, angles)
+        plot_model_fit_ellipse(params, [ellip_x_data, ellip_y_data], R, angles)
+        plot_axis_rotation(params, [ellip_x_data, ellip_y_data], R, angles)
+        plot_color_map_post_identif(params, disp_x_mean_raw, disp_y_mean_raw)
+
+    thread = threading.Thread(target=long_process)
+    thread.start()
+    for c in itertools.cycle(['|', '/', '-', '\\']):
+        sys.stdout.write('\rPloting and exporting figures' + c)
+        sys.stdout.flush()
+        time.sleep(0.1)
+        if not thread.is_alive():
+            break
+    sys.stdout.write('\rAll plots were saved !         \n')
