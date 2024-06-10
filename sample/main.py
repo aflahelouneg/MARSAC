@@ -20,6 +20,10 @@ Version 1.1:    15/03/2024
 - Add enable/disable features
 - Correct the displacement arrays in the function "ellipse_deformed"
 - Add waiting message for long process
+
+=============================
+version 1.2:    08/06/2024
+- Add the choice of DIC PROCESS (True/False) from terminal
 '''
 
 import numpy as np
@@ -44,9 +48,6 @@ matplotlib.use('agg')
 # ============================================
 ### Parameters
 
-DIC_PROCESS = True
-SAVE_VIDEO_FRAMES = True
-DISP_FIELD_IMAGES = True
 PLOT_DISP_FIELD = True
 PLOT_DEFORMATION = True
 PLOT_MODEL_FIT = True
@@ -427,6 +428,18 @@ def plot_color_map_post_identif(params, disp_x_mean_raw, disp_y_mean_raw):
 # ==============================================================
 # ==============================================================
 ### Experimental data
+
+DIC_bool = input('Perform the DIC process [Y/n]: ')
+if DIC_bool == ('Y' or 'y'):
+    DIC_PROCESS = True
+    SAVE_VIDEO_FRAMES = True
+    DISP_FIELD_IMAGES = True
+else:
+    print('You choosed to not use DIC. Warning! the parameter identification \
+        will be processed on the existing DIC files in the folder.')
+    DIC_PROCESS = False
+    SAVE_VIDEO_FRAMES = False
+    DISP_FIELD_IMAGES = False
 
 if DIC_PROCESS:
     import pydic
