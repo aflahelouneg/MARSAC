@@ -40,7 +40,7 @@ def make_new_directory(directory):
         else:
             raise
 
-def suction_dic(data_directory_path, pydic_methods, SAVE_VIDEO_FRAMES = False
+def suction_dic(data_directory_path, pydic_methods, SAVE_VIDEO_FRAMES = False,
                     DISP_FIELD_IMAGES = False):
     '''
     data_directory_path : the folder containing videos for a single test series
