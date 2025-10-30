@@ -337,7 +337,7 @@ def draw_opencv(image, *args, **kwargs):
             if np.isnan(pt0[0])==False and np.isnan(pt0[1])==False and np.isnan(pt1[0])==False and np.isnan(pt1[1])==False :
                  disp_x = (pt1[0]-pt0[0])*scale
                  disp_y = (pt1[1]-pt0[1])*scale
-                 frame = cv2.line(frame, (pt0[0], pt0[1]), (int(pt0[0]+disp_x), int(pt0[1]+disp_y)), l_color, 2)
+                 frame = cv2.line(frame, (int(pt0[0]), int(pt0[1])), (int(pt0[0]+disp_x), int(pt0[1]+disp_y)), l_color, 2)
 
     if 'grid' in kwargs:
         gr =  kwargs['grid']
